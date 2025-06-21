@@ -14,7 +14,7 @@
             <div class="header-controls">
                 <nav>
                     <ul id="nav-links">
-                        {%- for post in collections.all | reverse -%}
+                        {%- for post in collections.post | reverse -%}
                         <li><a href="{{ post.url }}" class="nav-link{% if post.url == page.url %} active{% endif %}">{{ post.data.title }}</a></li>
                         {%- endfor -%}
                     </ul>
