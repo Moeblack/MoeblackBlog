@@ -290,9 +290,7 @@
             <div class="header-controls">
                 <nav>
                     <ul id="nav-links">
-                        <li><a href="#essay1" data-content="essay1" class="nav-link">关于堤坝</a></li>
-                        <li><a href="#essay2" data-content="essay2" class="nav-link">棋盘与尘埃</a></li>
-                        <li><a href="#essay3" data-content="essay3" class="nav-link">回声的重量</a></li>
+                        <!-- Navigation will be populated dynamically by JavaScript -->
                     </ul>
                 </nav>
                 <button class="settings-toggle" id="settings-toggle-btn" aria-label="设置">
@@ -367,7 +365,8 @@
             }
 
             function updateActiveLink(contentId) {
-                navLinks.forEach(l => {
+                const currentNavLinks = document.querySelectorAll('.nav-link');
+                currentNavLinks.forEach(l => {
                     l.classList.toggle('active', l.getAttribute('data-content') === contentId);
                 });
             }
@@ -410,7 +409,8 @@
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
                 const activeLink = document.querySelector('.nav-link.active');
-                const linksArray = Array.from(navLinks);
+                const currentNavLinks = document.querySelectorAll('.nav-link');
+                const linksArray = Array.from(currentNavLinks);
                 const currentIndex = linksArray.findIndex(link => link === activeLink);
 
                 if (e.key === 'k' || e.key === 'ArrowUp') {
@@ -426,8 +426,28 @@
             
             async function initialize() {
                 try {
-                    const response = await fetch('/essays.json');
+                    const response = await fetch('./essays.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
                     essays = await response.json();
+
+                    // Generate navigation dynamically
+                    const navUl = document.getElementById('nav-links');
+                    navUl.innerHTML = '';
+                    Object.keys(essays).forEach(essayKey => {
+                        const li = document.createElement('li');
+                        const a = document.createElement('a');
+                        a.href = `#${essayKey}`;
+                        a.setAttribute('data-content', essayKey);
+                        a.className = 'nav-link';
+                        a.textContent = essays[essayKey].title;
+                        li.appendChild(a);
+                        navUl.appendChild(li);
+                    });
+
+                    // Update navLinks reference after dynamic generation
+                    const navLinks = document.querySelectorAll('.nav-link');
 
                     // Setup everything that depends on essays data
                     navLinks.forEach(link => link.addEventListener('click', handleNavigation));
@@ -443,7 +463,7 @@
 
                 } catch (error) {
                     console.error('Failed to load essays:', error);
-                    contentContainer.innerHTML = `<div class="content-wrapper"><p>内容加载失败，请检查网络或联系管理员。</p></div>`;
+                    contentContainer.innerHTML = `<div class="content-wrapper"><p>内容加载失败，请检查网络或联系管理员。错误详情: ${error.message}</p></div>`;
                 }
 
                 // Setup UI controls that don't depend on data
