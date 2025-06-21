@@ -11,6 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@11ty/eleventy": "^2.0.1"
+    "@11ty/eleventy": "^2.0.1",
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^13.0.2"
   }
 } 
