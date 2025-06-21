@@ -1,0 +1,134 @@
+<p>Eleventy (11ty).</p>
+<p>它能完美满足你的需求，原因在于其核心设计哲学：<strong>最小侵入性</strong>。</p>
+<p>Eleventy不像其他框架那样强迫你使用特定的前端库或项目结构。它能将你现有的SPA文件视为一个“外壳”或“模板”，然后将Markdown内容无损地注入其中。你的CSS、JavaScript、甚至动画逻辑都可以平滑移植。</p>
+<p>所有主流生成器都有完善的GitHub Pages部署流程，但只有Eleventy能让你以最低的成本、最完整地保留你已精心设计的页面风格。</p>
+<h3>迁移与部署路径</h3>
+<p>这是一个将你现有项目转化为一个由Eleventy驱动、并由GitHub Actions自动部署的博客的完整流程。</p>
+<h4>1. 项目结构调整</h4>
+<p>在你的项目根目录，重新组织文件。这是唯一需要手动改造的部分。</p>
+<pre><code>my-blog/
+├── .eleventy.js             # Eleventy 配置文件 (稍后创建)
+├── .github/
+│   └── workflows/
+│       └── deploy.yml       # GitHub Actions 部署脚本 (稍后创建)
+├── _includes/
+│   └── layout.liquid        # 你的 index.html 将会变成这个布局文件
+├── posts/
+│   ├── on-dams.md           # 你的第一篇文章
+│   └── chessboard-and-dust.md # 你的第二篇文章
+├── css/
+│   └── style.css            # 将你的 &lt;style&gt; 内容移到这里
+├── js/
+│   └── main.js              # 将你的 &lt;script&gt; 内容移到这里
+└── package.json
+</code></pre>
+<h4>2. 将SPA改造为布局模板</h4>
+<ol>
+<li>
+<p><strong>创建 <code>_includes/layout.liquid</code>:</strong>
+将你<code>index.html</code>的全部内容复制到这个新文件中。</p>
+</li>
+<li>
+<p><strong>修改 <code>layout.liquid</code>:</strong></p>
+<ul>
+<li><strong>链接外部CSS/JS:</strong> 删除<code>&lt;style&gt;</code>和<code>&lt;script&gt;</code>标签内的所有代码，改为外部链接。<pre><code class="language-html">&lt;head&gt;
+    ...
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;/css/style.css&quot;&gt;
+    ...
+&lt;/head&gt;
+&lt;body&gt;
+    ...
+    &lt;script src=&quot;/js/main.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+</code></pre>
+</li>
+<li><strong>设置内容注入点:</strong> 找到你原先用JavaScript注入文章内容的<code>&lt;main&gt;</code>容器，将其中的内容替换为一个模板变量：``。Liquid是Eleventy默认的模板语言之一，语法直观。<pre><code class="language-html">&lt;main id=&quot;content-container&quot;&gt;
+    
+&lt;/main&gt;
+</code></pre>
+</li>
+<li><strong>导航栏动态化 (可选，推荐):</strong> 你可以继续硬编码导航，但更好的方式是让Eleventy根据你的文章自动生成。<pre><code class="language-html">&lt;nav&gt;
+    &lt;ul&gt;&lt;li&gt;&lt;a href=&quot;/posts/di-ba/&quot;&gt;关于堤坝&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;/posts/hui-sheng/&quot;&gt;回声的重量&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;/posts/qi-pan/&quot;&gt;棋盘与尘埃&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;/废弃/断章/&quot;&gt;&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;/废弃/流程/&quot;&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;
+&lt;/nav&gt;
+</code></pre>
+</li>
+</ul>
+</li>
+</ol>
+<h4>3. 创建Markdown文章</h4>
+<p>在<code>posts/</code>目录下创建<code>.md</code>文件。每个文件的头部必须包含YAML Front Matter，用于指定元数据和使用的布局。</p>
+<p><strong><code>posts/on-dams.md</code>:</strong></p>
+<pre><code class="language-markdown">---
+title: 关于堤坝
+layout: layout.liquid
+---
+
+人们谈论溃堤，总聚焦于最后冲垮一切的洪峰。那是一个戏剧性的瞬间，一个可供凭吊的坐标...
+</code></pre>
+<p>Eleventy会读取这个文件，将<code>---</code>之后的内容（已自动转换为HTML）注入到<code>layout.liquid</code>中``的位置。</p>
+<h4>4. 配置Eleventy</h4>
+<ol>
+<li>
+<p><strong>安装:</strong> 在项目根目录运行 <code>npm init -y</code> 和 <code>npm install @11ty/eleventy</code>。</p>
+</li>
+<li>
+<p><strong>创建 <code>.eleventy.js</code> 配置文件:</strong> 这个文件告诉Eleventy，除了处理模板和Markdown，还需要将<code>css</code>和<code>js</code>这样的静态文件夹原样复制到最终的输出目录。</p>
+<pre><code class="language-javascript">// .eleventy.js
+module.exports = function(eleventyConfig) {
+  // 将 'css' 文件夹复制到输出目录
+  eleventyConfig.addPassthroughCopy(&quot;css&quot;);
+  // 将 'js' 文件夹复制到输出目录
+  eleventyConfig.addPassthroughCopy(&quot;js&quot;);
+
+  return {
+    dir: {
+      input: &quot;.&quot;,       // 输入目录
+      includes: &quot;_includes&quot;, // 布局文件目录
+      output: &quot;_site&quot;   // 输出目录
+    }
+  };
+};
+</code></pre>
+</li>
+</ol>
+<h4>5. 设置自动化部署 (GitHub Actions)</h4>
+<p>在<code>.github/workflows/</code>目录下创建<code>deploy.yml</code>。</p>
+<pre><code class="language-yaml">name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # 当推送到 main 分支时触发
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies 📦
+        run: npm install
+
+      - name: Build 🛠️
+        run: npx @11ty/eleventy # 运行 Eleventy 构建命令
+
+      - name: Deploy 🚀
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: $
+          publish_dir: _site # 部署 Eleventy 的输出目录
+</code></pre>
+<h4>最终工作流</h4>
+<ol>
+<li>在<code>posts</code>目录中添加或修改Markdown文件。</li>
+<li><code>git add .</code>, <code>git commit -m &quot;新文章&quot;</code>, <code>git push</code>。</li>
+<li>GitHub Actions会自动运行，构建整个网站，并将其部署到你的GitHub Pages。</li>
+</ol>
+<p>你的博客上线了。你保留了100%的视觉设计，同时获得了一个专业、自动化的内容发布流程。</p>
